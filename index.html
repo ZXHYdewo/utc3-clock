@@ -7,11 +7,11 @@
   <!-- Web App 设置：支持沉浸式应用安装 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="UTC+3 时钟">
+  <meta name="apple-mobile-web-app-title" content="全球时钟">
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   
-  <title>UTC+3 实时时钟</title>
+  <title>全球极简时钟</title>
   
   <!-- 引入 PWA 清单文件，用于触发“安装应用” -->
   <link rel="manifest" href="manifest.json">
@@ -27,64 +27,125 @@
       user-select: none;
       overscroll-behavior: none;
     }
+    
+    /* 隐藏原生 select 的默认箭头，使用我们自定义的更精致的箭头 */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      outline: none;
+    }
+    
+    /* 自定义下拉箭头图标 */
+    .custom-select-wrapper::after {
+      content: '▼';
+      font-size: 0.6rem;
+      color: #9ca3af; /* 浅灰色，与文字相呼应 */
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none; /* 让点击穿透到 select 上 */
+    }
   </style>
 </head>
 <body class="min-h-screen bg-white flex flex-col items-center justify-center font-sans">
   
-  <div class="text-center px-4">
-    <!-- 核心时间显示：严格恢复最初的大号、无衬线体、等宽数字 -->
+  <div class="text-center px-4 w-full flex flex-col items-center">
+    
+    <!-- 核心时间显示：完美保留大号、加粗、等宽数字的设计 -->
     <h1 id="time-display" class="text-7xl sm:text-8xl md:text-9xl font-bold text-black tabular-nums tracking-tight">
       00:00:00
     </h1>
     
-    <!-- 附加信息：严格恢复最初的灰色日期显示 -->
+    <!-- 附加信息：完美保留浅灰色、中号字体的日期显示 -->
     <p id="date-display" class="text-xl sm:text-2xl md:text-3xl text-gray-600 mt-6 font-medium">
       LOADING...
     </p>
 
-    <!-- 提示标签：严格恢复最初的圆角标签 -->
-    <div class="mt-8 inline-block px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium tracking-wide">
-      UTC+3 TIME
+    <!-- 🌟 新增功能：极简下拉菜单取代了原来的静态标签 🌟 -->
+    <!-- 外层包装用于定位自定义箭头 -->
+    <div class="custom-select-wrapper relative mt-8 inline-block">
+      <select id="timezone-select" class="pl-5 pr-8 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium tracking-wide cursor-pointer hover:bg-gray-100 transition-colors shadow-sm focus:ring-2 focus:ring-gray-200">
+        <!-- 下拉选项列表，默认选中 UTC+3 -->
+        <option value="-11">UTC-11 纽埃</option>
+        <option value="-10">UTC-10 檀香山</option>
+        <option value="-9">UTC-9 阿拉斯加</option>
+        <option value="-8">UTC-8 洛杉矶</option>
+        <option value="-7">UTC-7 丹佛</option>
+        <option value="-6">UTC-6 芝加哥</option>
+        <option value="-5">UTC-5 纽约</option>
+        <option value="-4">UTC-4 加拉加斯</option>
+        <option value="-3">UTC-3 布宜诺斯艾利斯</option>
+        <option value="-2">UTC-2 中大西洋</option>
+        <option value="-1">UTC-1 亚速尔群岛</option>
+        <option value="0">UTC+0 伦敦</option>
+        <option value="1">UTC+1 巴黎</option>
+        <option value="2">UTC+2 开罗</option>
+        <option value="3" selected>UTC+3 莫斯科/利雅得</option>
+        <option value="4">UTC+4 迪拜</option>
+        <option value="5">UTC+5 伊斯兰堡</option>
+        <option value="5.5">UTC+5:30 新德里</option>
+        <option value="6">UTC+6 达卡</option>
+        <option value="7">UTC+7 曼谷</option>
+        <option value="8">UTC+8 北京/新加坡</option>
+        <option value="9">UTC+9 东京</option>
+        <option value="9.5">UTC+9:30 达尔文</option>
+        <option value="10">UTC+10 悉尼</option>
+        <option value="11">UTC+11 努美阿</option>
+        <option value="12">UTC+12 奥克兰</option>
+      </select>
     </div>
+
   </div>
 
   <script>
-    // 注册离线服务 (Service Worker)，这是触发 Chrome “安装应用”的核心
+    // 注册离线服务 (Service Worker)，确保 PWA 功能正常
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW 注册失败', err));
       });
     }
 
+    // 获取下拉菜单元素
+    const timezoneSelect = document.getElementById('timezone-select');
+    // 获取当前选中的时区偏移量（初始为选中的 3）
+    let currentTargetOffset = parseFloat(timezoneSelect.value) * 60;
+
+    // 当用户在下拉菜单中选择新时区时，更新偏移量并立刻刷新时间
+    timezoneSelect.addEventListener('change', function() {
+      currentTargetOffset = parseFloat(this.value) * 60;
+      updateClock(); // 切换时立刻无缝刷新，不等待下一秒
+    });
+
     function updateClock() {
       const now = new Date();
       
-      // 逻辑：计算 UTC+3 时间
-      const targetOffset = 3 * 60; 
+      // 核心逻辑：使用动态获取的 currentTargetOffset 代替原来写死的 3 * 60
       const localOffset = now.getTimezoneOffset();
-      const utc3Date = new Date(now.getTime() + (targetOffset + localOffset) * 60000);
+      const targetDate = new Date(now.getTime() + (currentTargetOffset + localOffset) * 60000);
 
       // 格式化时间
-      const h = String(utc3Date.getHours()).padStart(2, '0');
-      const m = String(utc3Date.getMinutes()).padStart(2, '0');
-      const s = String(utc3Date.getSeconds()).padStart(2, '0');
+      const h = String(targetDate.getHours()).padStart(2, '0');
+      const m = String(targetDate.getMinutes()).padStart(2, '0');
+      const s = String(targetDate.getSeconds()).padStart(2, '0');
       
-      // 格式化日期，恢复 YYYY-MM-DD 格式
-      const year = utc3Date.getFullYear();
-      const month = String(utc3Date.getMonth() + 1).padStart(2, '0');
-      const day = String(utc3Date.getDate()).padStart(2, '0');
+      // 格式化日期
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetDate.getDate()).padStart(2, '0');
 
       // 更新 DOM
       document.getElementById('time-display').textContent = `${h}:${m}:${s}`;
       document.getElementById('date-display').textContent = `${year}-${month}-${day}`;
     }
 
-    // 每隔1秒更新
+    // 立即执行一次，并每隔1秒更新
     updateClock();
     setInterval(updateClock, 1000);
 
     // 解决部分移动端浏览器点击延时
-    document.addEventListener('touchstart', function() {}, false);
+    document.addEventListener('touchstart', function() {}, {passive: true});
   </script>
 </body>
 </html>
