@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <!-- 核心设置：让网页在平板和手机上完美适配，并禁止双击缩放，体验更像原生App -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Web App 标签：告诉苹果 iOS / 安卓系统，添加到桌面时将其作为一个独立的App全屏运行 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UTC+3 时钟">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <title>UTC+3 实时时钟</title>
+  
+  <!-- 引入 Tailwind CSS 进行极简排版 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 防止用户长按选中文字，增加 App 的真实感 */
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-white flex flex-col items-center justify-center font-sans">
+  
+  <div class="text-center px-4">
+    <!-- 核心时间显示： tabular-nums 保证数字等宽防止抖动 -->
+    <h1 id="time-display" class="text-7xl sm:text-8xl md:text-9xl font-bold text-black tabular-nums tracking-tight">
+      --:--:--
+    </h1>
+    
+    <!-- 附加信息：日期显示 -->
+    <p id="date-display" class="text-xl sm:text-2xl md:text-3xl text-gray-600 mt-6 font-medium">
+      ---- -- --
+    </p>
+
+    <!-- 提示标签 -->
+    <div class="mt-8 inline-block px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium tracking-wide">
+      UTC+3 TIME
+    </div>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      
+      // 核心逻辑：计算 UTC+3 时间，不依赖系统时区硬编码
+      const targetOffset = 3 * 60; // 目标时区：UTC+3 (单位：分钟)
+      const localOffset = now.getTimezoneOffset(); // 本地时区偏移
+      
+      const utc3Date = new Date(now.getTime() + (targetOffset + localOffset) * 60000);
+
+      // 格式化时间 HH:mm:ss
+      const hours = String(utc3Date.getHours()).padStart(2, '0');
+      const minutes = String(utc3Date.getMinutes()).padStart(2, '0');
+      const seconds = String(utc3Date.getSeconds()).padStart(2, '0');
+      
+      // 格式化日期 YYYY-MM-DD
+      const year = utc3Date.getFullYear();
+      const month = String(utc3Date.getMonth() + 1).padStart(2, '0');
+      const day = String(utc3Date.getDate()).padStart(2, '0');
+
+      // 更新页面显示
+      document.getElementById('time-display').textContent = `${hours}:${minutes}:${seconds}`;
+      document.getElementById('date-display').textContent = `${year}-${month}-${day}`;
+    }
+
+    // 立即执行一次以避免初始空白，然后每秒刷新
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
