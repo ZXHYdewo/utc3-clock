@@ -2,75 +2,89 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
-  <!-- Web App 设置 -->
+  <!-- Web App 设置：支持沉浸式应用安装 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="UTC+3 时钟">
+  <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   
   <title>UTC+3 实时时钟</title>
   
-  <!-- 连接到 PWA 清单 -->
+  <!-- 引入 PWA 清单文件，用于触发“安装应用” -->
   <link rel="manifest" href="manifest.json">
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  
+  <!-- 使用 Tailwind CSS 进行经典排版 -->
+  <script src="https://cdn.tailwindcss.com"></script>
   
   <style>
-    /* 防止用户长按选中文字，增加 App 的真实感 */
+    /* 防止用户长按选中文字，增加原生 App 的真实感 */
     body {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      overscroll-behavior: none;
     }
   </style>
 </head>
 <body class="min-h-screen bg-white flex flex-col items-center justify-center font-sans">
   
   <div class="text-center px-4">
-    <!-- 核心时间显示：恢复最初的大号、无衬线体、等宽数字 -->
+    <!-- 核心时间显示：严格恢复最初的大号、无衬线体、等宽数字 -->
     <h1 id="time-display" class="text-7xl sm:text-8xl md:text-9xl font-bold text-black tabular-nums tracking-tight">
-      --:--:--
+      00:00:00
     </h1>
     
-    <!-- 附加信息：日期显示 -->
+    <!-- 附加信息：严格恢复最初的灰色日期显示 -->
     <p id="date-display" class="text-xl sm:text-2xl md:text-3xl text-gray-600 mt-6 font-medium">
-      ---- -- --
+      LOADING...
     </p>
 
-    <!-- 提示标签 -->
+    <!-- 提示标签：严格恢复最初的圆角标签 -->
     <div class="mt-8 inline-block px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium tracking-wide">
       UTC+3 TIME
     </div>
   </div>
 
   <script>
-    // 注册离线服务 (Service Worker) 以支持 PWA
+    // 注册离线服务 (Service Worker)，这是触发 Chrome “安装应用”的核心
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW 注册失败', err));
       });
     }
 
     function updateClock() {
       const now = new Date();
+      
+      // 逻辑：计算 UTC+3 时间
       const targetOffset = 3 * 60; 
       const localOffset = now.getTimezoneOffset();
       const utc3Date = new Date(now.getTime() + (targetOffset + localOffset) * 60000);
 
+      // 格式化时间
       const h = String(utc3Date.getHours()).padStart(2, '0');
       const m = String(utc3Date.getMinutes()).padStart(2, '0');
       const s = String(utc3Date.getSeconds()).padStart(2, '0');
+      
+      // 格式化日期，恢复 YYYY-MM-DD 格式
       const year = utc3Date.getFullYear();
       const month = String(utc3Date.getMonth() + 1).padStart(2, '0');
       const day = String(utc3Date.getDate()).padStart(2, '0');
 
+      // 更新 DOM
       document.getElementById('time-display').textContent = `${h}:${m}:${s}`;
       document.getElementById('date-display').textContent = `${year}-${month}-${day}`;
     }
+
+    // 每隔1秒更新
     updateClock();
     setInterval(updateClock, 1000);
+
+    // 解决部分移动端浏览器点击延时
+    document.addEventListener('touchstart', function() {}, false);
   </script>
 </body>
 </html>
