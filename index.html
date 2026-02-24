@@ -2,29 +2,51 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#ffffff">
-  <title>UTC+3 时钟</title>
+  
+  <!-- Web App 设置 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UTC+3 时钟">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <title>UTC+3 实时时钟</title>
   
   <!-- 连接到 PWA 清单 -->
   <link rel="manifest" href="manifest.json">
   <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
   
   <style>
-    body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
-    .time-font { font-variant-numeric: tabular-nums; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    /* 防止用户长按选中文字，增加 App 的真实感 */
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-white flex flex-col items-center justify-center overflow-hidden">
+<body class="min-h-screen bg-white flex flex-col items-center justify-center font-sans">
   
   <div class="text-center px-4">
-    <h1 id="time-display" class="time-font text-[22vw] sm:text-[18vw] font-bold text-black leading-none">00:00:00</h1>
-    <p id="date-display" class="text-[6vw] sm:text-[4vw] text-gray-400 mt-6 font-medium tracking-widest">LOADING...</p>
-    <div class="mt-10 inline-block px-5 py-1.5 rounded-full border border-gray-100 bg-gray-50 text-gray-400 text-[3vw] sm:text-sm font-bold tracking-widest">UTC +3</div>
+    <!-- 核心时间显示：恢复最初的大号、无衬线体、等宽数字 -->
+    <h1 id="time-display" class="text-7xl sm:text-8xl md:text-9xl font-bold text-black tabular-nums tracking-tight">
+      --:--:--
+    </h1>
+    
+    <!-- 附加信息：日期显示 -->
+    <p id="date-display" class="text-xl sm:text-2xl md:text-3xl text-gray-600 mt-6 font-medium">
+      ---- -- --
+    </p>
+
+    <!-- 提示标签 -->
+    <div class="mt-8 inline-block px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium tracking-wide">
+      UTC+3 TIME
+    </div>
   </div>
 
   <script>
-    // 注册离线服务 (Service Worker)
+    // 注册离线服务 (Service Worker) 以支持 PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js');
